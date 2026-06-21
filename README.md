@@ -1,7 +1,9 @@
+![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/javascript-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black)
+
 # TerraStreak 🌿 — Personal Carbon Footprint Tracker & Sunflower Companion
 TerraStreak is a gamified carbon ledger application. It integrates daily carbon footprint tracking, digital habits monitoring, smart grid scheduling, and an interactive, expressive Sunflower companion that grows, reacts, and changes styles based on your daily real-world choices.
 ---
-## 🌟 Major Highlights (v8 Release)
+## 🌟 Major Highlights 
 *   **Interactive 3-Level Eco Quizzes:** A dedicated quizzes panel on the sidebar offering Easy, Medium, and Hard challenges (10 questions each) with payouts of 20, 50, and 85 Green Coins for perfect 10/10 scores.
 *   **Custom SVG Accessory Boutique:** Replaced all text emojis with 16 custom SVG accessories (Hats, Headphones, Roses, Monocles, Masks) that attach to the Sunflower and sway along with its breathing animations.
 *   **150% Boutique Price Scaling:** Adjusted all shop item prices to 2.5x base values to introduce a balanced gameplay economy.
