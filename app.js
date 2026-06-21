@@ -586,6 +586,8 @@ const U = {
     // 3. Stats display
     if (this.el.streak) this.el.streak.textContent = `${S.streak} days ${S.protected ? '⚠️' : ''}`;
     if (this.el.coins) this.el.coins.textContent = S.coins;
+    const shopCoinsVal = document.getElementById('shop-coins-val');
+    if (shopCoinsVal) shopCoinsVal.textContent = S.coins;
     if (this.el.btnSlip) {
       this.el.btnSlip.classList.toggle('active', S.protected);
       this.el.btnSlip.textContent = S.protected ? 'Streak Protected ✓' : '⚠️ I Slipped Today';
