@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net;">
+  <title>TerraStreak v4 — Personal Carbon Ledger & Sustainability Tracker</title>
+  <meta name="description" content="A reactive, gamified carbon wallet with automated activity calculations, detailed digital tracking, electricity grid optimization, and streaks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" crossorigin>
+  <link rel="stylesheet" href="style.css?v=5.0">
+</head>
+<body>
+
+  <!-- ─── FLOATING PARTICLES BACKGROUND ─── -->
+  <div id="particles" class="particles" aria-hidden="true"></div>
+
+  <!-- ─── HONESTY PLEDGE MODAL OVERLAY ─── -->
+  <div id="pledge-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card glass-deep">
+      <span class="modal-icon" aria-hidden="true">📜</span>
+      <h2 id="modal-title">The TerraStreak Honesty Pledge</h2>
+      <p class="modal-text">
+        Real sustainability begins with honest self-reporting. Log your daily actions truthfully. Falsifying entries only distorts your personal environmental ledger and defeats the purpose of tracking.
+      </p>
+      <div class="fg">
+        <label for="pledge-name" class="fl">Sign your full name to commit:</label>
+        <input type="text" id="pledge-name" class="fi glass-input" placeholder="e.g. Jane Doe" autocomplete="off">
+      </div>
+      <button id="btn-pledge-submit" class="btn btn-glow">I Commit to Honest Logging</button>
+    </div>
+  </div>
+
+  <!-- ─── GOOGLE HEALTH OAUTH CONSENT MODAL ─── -->
+  <div id="health-oauth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="oauth-title">
+    <div class="modal-card glass-deep" style="max-width: 420px; text-align: left;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <span style="font-size: 2rem;">🏥</span>
+        <div>
+          <h2 id="oauth-title" style="margin: 0; font-size: 1.3rem;">Sign in with Google</h2>
+          <span class="sub">to continue to TerraStreak</span>
+        </div>
+      </div>
+      <p class="modal-text" style="text-align: left; font-size: 0.82rem; line-height: 1.45; margin-bottom: 15px;">
+        TerraStreak wants to access your Google Health activity records:
+      </p>
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
+          <input type="checkbox" id="scope-walking" checked disabled style="margin-top: 3px;">
+          <div>
+            <label for="scope-walking" style="font-weight: 600; font-size: 0.85rem; display: block; color: var(--text);">Read daily walking distance</label>
+            <span class="sub" style="font-size: 0.74rem; display: block; color: var(--text-muted);">Access steps and walking activities recorded automatically.</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+          <input type="checkbox" id="scope-biking" checked disabled style="margin-top: 3px;">
+          <div>
+            <label for="scope-biking" style="font-weight: 600; font-size: 0.85rem; display: block; color: var(--text);">Read daily cycling distance</label>
+            <span class="sub" style="font-size: 0.74rem; display: block; color: var(--text-muted);">Access active bicycling mileage and workouts.</span>
+          </div>
+        </div>
+      </div>
+      <p class="sub" style="font-size: 0.72rem; line-height: 1.35; margin-bottom: 20px;">
+        By clicking "Allow", you authorize TerraStreak to fetch this data to calculate your active transit carbon offsets. You can revoke access at any time.
+      </p>
+      <div style="display: flex; gap: 12px;">
+        <button id="btn-oauth-deny" class="btn btn-g" style="flex: 1; justify-content: center;">Deny</button>
+        <button id="btn-oauth-allow" class="btn btn-glow" style="flex: 1; justify-content: center;">Allow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SUNFLOWER ACCESSORIES SHOP MODAL ─── -->
+  <div id="shop-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+    <div class="modal-card glass-deep" style="max-width: 440px;">
+      <button id="btn-shop-close" class="modal-close-btn" aria-label="Close Shop" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+      <h2 id="shop-title" style="margin-top: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-display);">
+        🛍️ Sunflower Boutique
+      </h2>
+      <p class="modal-text" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; text-align: center;">
+        Dress up your Sunflower companion! Equip purchased items to show them off.
+      </p>
+      
+      <!-- Coins Balance Display in Shop -->
+      <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: var(--r-sm); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 700; color: #fbbf24; font-size: 0.9rem;">
+        <span>Your Balance:</span>
+        <span>🪙 <span id="shop-coins-val">0</span> Coins</span>
+      </div>
+
+      <div id="shop-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+        <!-- Shop items are rendered dynamically in JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── APP SHELL CONTAINER ─── -->
+  <div id="app-shell">
+
+    <!-- ─── SIDEBAR NAVIGATION & STATS ─── -->
+    <aside class="sidebar glass-sidebar" role="complementary">
+      <div class="sidebar-header">
+        <div class="logo" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="logo-badge" aria-hidden="true">🌱</div>
+            <span class="logo-name">TerraStreak</span>
+          </div>
+          <button id="sound-toggle" class="sound-toggle-btn" title="Toggle Sound (Web Audio Synth)" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; font-size: 1rem; padding: 4px; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: var(--text-muted);">🔇</button>
+        </div>
+        <div id="user-display" class="user-display">Eco-Warrior</div>
+      </div>
+
+      <!-- Avatar & Budget Ring Unified -->
+      <div class="avatar-ring-container glass-panel">
+        <div id="ring-wrap" class="ring-wrap">
+          <svg viewBox="0 0 160 160" aria-hidden="true">
+            <defs>
+              <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00f0a0"/>
+                <stop offset="100%" stop-color="#00e5ff"/>
+              </linearGradient>
+              <linearGradient id="ring-gradient-warn" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff4f7b"/>
+                <stop offset="100%" stop-color="#fbbf24"/>
+              </linearGradient>
+              <filter id="ring-glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <circle class="ring-bg" cx="80" cy="80" r="70"/>
+            <circle id="ring-fill" class="ring-fill" cx="80" cy="80" r="70" stroke-dasharray="440" stroke-dashoffset="0" filter="url(#ring-glow)"/>
+          </svg>
+          <div id="avatar-wrap" class="sidebar-avatar stage-1 glow">
+            <!-- Simulated Weather indicator & Rain canopy overlay -->
+            <div id="weather-badge" class="weather-badge" title="Today's Weather">Sunny</div>
+            <div id="rain-canopy" class="rain-canopy hidden" aria-hidden="true">🌂</div>
+
+            <!-- Falling droplets visual effect container -->
+            <div id="water-droplets" class="water-droplets" aria-hidden="true"></div>
+
+            <svg viewBox="0 0 100 100" id="seedling-svg" aria-label="Talking plant companion">
+              <defs>
+                <filter id="plant-shadow">
+                  <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
+                </filter>
+                <!-- Rounded PvZ-style Sunflower Petal base -->
+                <path id="sunflower-petal" d="M0,0 C-3.5,-5 -6,-11 0,-16 C6,-11 3.5,-5 0,0" fill="#fbbf24"/>
+                <path id="sunflower-petal-inner" d="M0,0 C-2,-4 -3.5,-8 0,-12 C3.5,-8 2,-4 0,0" fill="#ea580c"/>
+              </defs>
+
+              <!-- Pot / Container -->
+              <path d="M30,78 L32,92 L68,92 L70,78 Z" fill="#8B5E3C" filter="url(#plant-shadow)"/>
+              <path d="M32,78 L68,78 L70,78 C70,78 72,75 50,75 C28,75 30,78 30,78 Z" fill="#A0724B"/>
+              <ellipse cx="50" cy="78" rx="20" ry="3" fill="#6B4226"/>
+              <!-- Soil -->
+              <ellipse cx="50" cy="79" rx="18" ry="2.5" fill="#4a3525"/>
+
+              <!-- Leaf-hands resting on the edge of the pot (PvZ style) -->
+              <path class="plant-part leaf-hand left-hand" d="M32,78 C18,78 12,82 30,82" fill="#059669" filter="url(#plant-shadow)"/>
+              <path class="plant-part leaf-hand right-hand" d="M68,78 C82,78 88,82 70,82" fill="#059669" filter="url(#plant-shadow)"/>
+
+              <!-- Living Plant Group (Breathing & Swaying) -->
+              <g id="plant-living" class="plant-living">
+                <!-- Stem (shortened to end at cy=42 for head-to-stem union) -->
+                <path id="stem" class="stem-main" d="M50,78 C49,68 48,58 50,42" fill="none" stroke="#059669" stroke-width="4.5" stroke-linecap="round"/>
+
+                <!-- ─── STAGE 1: SPROUT ─── -->
+                <path class="plant-part stage1-only leaf left-leaf" d="M49,66 C36,60 38,50 49,66" fill="#10b981"/>
+
+                <!-- ─── STAGE 2: SAPLING ─── -->
+                <path class="plant-part stage2-only leaf left-leaf" d="M49,62 C32,54 36,44 49,62" fill="#10b981"/>
+                <path class="plant-part stage2-only leaf right-leaf" d="M51,54 C68,46 64,36 51,54" fill="#34d399"/>
+
+                <!-- ─── STAGE 3: BLOOMING SUNFLOWER ─── -->
+                <path class="plant-part stage3-only leaf left-leaf" d="M49,62 C32,54 36,44 49,62" fill="#10b981"/>
+                <path class="plant-part stage3-only leaf right-leaf" d="M51,54 C68,46 64,36 51,54" fill="#34d399"/>
+
+                <!-- Outer Yellow Petals Layer (Stage 3) -->
+                <g class="plant-part sunflower-petals-outer">
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(0 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(30 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(60 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(90 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(120 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(150 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(180 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(210 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(240 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(270 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(300 50 42)"/>
+                  <use href="#sunflower-petal" x="50" y="42" transform="rotate(330 50 42)"/>
+                </g>
+
+                <!-- Inner Orange Petals Layer for depth (Stage 3) -->
+                <g class="plant-part sunflower-petals-inner">
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(15 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(45 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(75 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(105 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(135 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(165 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(195 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(225 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(255 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(285 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(315 50 42)"/>
+                  <use href="#sunflower-petal-inner" x="50" y="42" transform="rotate(345 50 42)"/>
+                </g>
+
+                <!-- Soft face backing for Sprout & Sapling so eyes have structure -->
+                <circle class="plant-part stage1-only stage2-only face-backing" cx="50" cy="42" r="10.5" fill="#10b981" opacity="0.2"/>
+
+                <!-- Sunflower Chocolate Seed Disk (Stage 3) -->
+                <circle class="plant-part sunflower-disk" cx="50" cy="42" r="16.5" fill="#5c3f25" stroke="#ea580c" stroke-width="1" filter="url(#plant-shadow)"/>
+
+                <!-- ─── ACCESSORIES & FACE STAGE 3 ONLY (Rendered only on Blooming Sunflower) ─── -->
+                <g class="plant-part">
+                  <!-- Tiny Top Hat -->
+                  <g id="acc-top-hat" class="plant-accessory hidden">
+                    <ellipse cx="50" cy="24" rx="13" ry="2.5" fill="#1e293b"/>
+                    <path d="M41,24 L42,10 L58,10 L59,24 Z" fill="#1e293b"/>
+                    <path d="M41.6,22 L41.9,18 L58.1,18 L58.4,22 Z" fill="#ef4444"/>
+                  </g>
+                  <!-- Cool Sunglasses -->
+                  <g id="acc-sunglasses" class="plant-accessory hidden">
+                    <ellipse cx="42" cy="42" rx="6.5" ry="4.5" fill="#090d16" stroke="#fb7185" stroke-width="1"/>
+                    <ellipse cx="58" cy="42" rx="6.5" ry="4.5" fill="#090d16" stroke="#fb7185" stroke-width="1"/>
+                    <path d="M48.5,41.5 L51.5,41.5" stroke="#fb7185" stroke-width="1.5" fill="none"/>
+                    <line x1="39" y1="44" x2="42" y2="40" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="55" y1="44" x2="58" y2="40" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                  </g>
+                  <!-- Cute Bow Tie -->
+                  <g id="acc-bow-tie" class="plant-accessory hidden">
+                    <path d="M50,57 L43,53 L43,61 Z" fill="#3b82f6"/>
+                    <path d="M50,57 L57,53 L57,61 Z" fill="#3b82f6"/>
+                    <circle cx="50" cy="57" r="2.2" fill="#1d4ed8"/>
+                  </g>
+                  <!-- Eco Crown -->
+                  <g id="acc-crown" class="plant-accessory hidden">
+                    <path d="M39,24 Q50,26.5 61,24" stroke="#fbbf24" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M39,24 L41.5,13 L47,20 L50,11 L53,20 L58.5,13 L61,24 Z" fill="#fbbf24" stroke="#d97706" stroke-width="0.8"/>
+                    <circle cx="41.5" cy="12" r="1.2" fill="#ef4444"/>
+                    <circle cx="50" cy="10" r="1.2" fill="#3b82f6"/>
+                    <circle cx="58.5" cy="12" r="1.2" fill="#10b981"/>
+                  </g>
+                  <!-- Chef Hat -->
+                  <g id="acc-chef-hat" class="plant-accessory hidden">
+                    <path d="M42,24 L58,24 L57,21 L43,21 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+                    <path d="M43,21 C41,20 40,15 44,14 C43,10 49,9 50,12 C51,9 57,10 56,14 C60,15 59,20 57,21 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+                  </g>
+                  <!-- DJ Headphones -->
+                  <g id="acc-headphones" class="plant-accessory hidden">
+                    <path d="M34,42 A17,17 0 0,1 66,42" fill="none" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+                    <rect x="31" y="37" width="5" height="10" rx="2.5" fill="#4f46e5" stroke="#312e81" stroke-width="0.5"/>
+                    <rect x="34" y="39" width="1.5" height="6" rx="0.75" fill="#a5b4fc"/>
+                    <rect x="64" y="37" width="5" height="10" rx="2.5" fill="#4f46e5" stroke="#312e81" stroke-width="0.5"/>
+                    <rect x="64.5" y="39" width="1.5" height="6" rx="0.75" fill="#a5b4fc"/>
+                  </g>
+                  <!-- Red Rose -->
+                  <g id="acc-rose" class="plant-accessory hidden">
+                    <path d="M44,52 C40,54 36,54 34,55" fill="none" stroke="#22c55e" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M38,53 Q37,51 39,52 Z" fill="#15803d"/>
+                    <circle cx="33" cy="55" r="3.5" fill="#ef4444"/>
+                    <circle cx="32" cy="54.2" r="2.2" fill="#dc2626"/>
+                    <path d="M30.5,56 C32,58 35,56 35.5,54.5" fill="none" stroke="#b91c1c" stroke-width="0.6"/>
+                  </g>
+                  <!-- Cowboy Hat -->
+                  <g id="acc-cowboy" class="plant-accessory hidden">
+                    <path d="M34,25 Q50,29 66,25 Q50,21 34,25" fill="#b45309" stroke="#78350f" stroke-width="0.8"/>
+                    <path d="M40,24 C40,16 43,15 47,16 C48,16 50,15 50,15 C50,15 52,16 53,16 C57,15 60,16 60,24 Z" fill="#d97706" stroke="#78350f" stroke-width="0.8"/>
+                    <path d="M40,23 Q50,25 60,23 L60.2,21.5 Q50,23.5 39.8,21.5 Z" fill="#78350f"/>
+                  </g>
+                  <!-- Straw Hat -->
+                  <g id="acc-straw-hat" class="plant-accessory hidden">
+                    <ellipse cx="50" cy="24" rx="18" ry="3.5" fill="#fde047" stroke="#ca8a04" stroke-width="0.8"/>
+                    <path d="M42,23.5 C42,16 45,17 50,17 C55,17 58,16 58,23.5 Z" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+                    <path d="M42,22 C45,22.8 55,22.8 58,22 L58.1,23.2 C55,24 45,24 42,23.2 Z" fill="#22c55e"/>
+                  </g>
+                  <!-- Santa Hat -->
+                  <g id="acc-santa-hat" class="plant-accessory hidden">
+                    <rect x="40" y="21" width="20" height="3.5" rx="1.75" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5"/>
+                    <path d="M41,21 C41,12 48,10 54,9 C56,9 58,12 59,15 L59,21 Z" fill="#ef4444"/>
+                    <path d="M54,9 C57,9 62,11 62,14 C62,16 60,17 58,17" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="58" cy="17" r="2.2" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5"/>
+                  </g>
+                  <!-- Ninja Mask/Forehead Wrap -->
+                  <g id="acc-ninja" class="plant-accessory hidden">
+                    <rect x="35" y="32" width="30" height="6" fill="#0f172a"/>
+                    <path d="M35,35 L30,32 L32,36 L29,40 L35,37 Z" fill="#0f172a"/>
+                    <path d="M36,49 C36,58 64,58 64,49 C64,55 36,55 36,49" fill="#0f172a"/>
+                  </g>
+                  <!-- Detective Monocle -->
+                  <g id="acc-detective" class="plant-accessory hidden">
+                    <path d="M58,47 C59,51 63,55 64.5,47" fill="none" stroke="#fbbf24" stroke-width="0.8"/>
+                    <circle cx="58" cy="42" r="7" fill="none" stroke="#fbbf24" stroke-width="1.8"/>
+                    <path d="M53.5,40.5 A6.5,6.5 0 0,1 60.5,35.5" fill="none" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+                  </g>
+                  <!-- Bunny Ears -->
+                  <g id="acc-bunny-ears" class="plant-accessory hidden">
+                    <path d="M43,24 C40,15 41,5 44,5 C47,5 46,15 46,24 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+                    <path d="M44.2,22 C42.2,16 42.5,8 44,8 C45.5,8 45.2,16 45,22 Z" fill="#fda4af"/>
+                    <path d="M57,24 C60,15 59,5 56,5 C53,5 54,15 54,24 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+                    <path d="M55.8,22 C57.8,16 57.5,8 56,8 C54.5,8 54.8,16 55,22 Z" fill="#fda4af"/>
+                  </g>
+                  <!-- Disguise Mask -->
+                  <g id="acc-disguise" class="plant-accessory hidden">
+                    <circle cx="42" cy="42" r="7" fill="none" stroke="#000" stroke-width="1.8"/>
+                    <circle cx="58" cy="42" r="7" fill="none" stroke="#000" stroke-width="1.8"/>
+                    <path d="M49,42 L51,42" stroke="#000" stroke-width="1.8"/>
+                    <path d="M50,42 C48,42 47,48 50,49 C53,48 52,42 50,42" fill="#fda4af" stroke="#f43f5e" stroke-width="0.5"/>
+                    <path d="M50,50 C46,49 42,52 42,53 C44,53 47,51 50,51 C53,51 56,53 58,53 C58,52 54,49 50,50" fill="#000"/>
+                  </g>
+                  <!-- Butterfly Friend -->
+                  <g id="acc-butterfly" class="plant-accessory hidden">
+                    <path d="M30,30 C27,24 23,26 26,30 C23,34 27,36 30,30" fill="#f43f5e" opacity="0.9"/>
+                    <path d="M32,30 C35,24 39,26 36,30 C39,34 35,36 32,30" fill="#f43f5e" opacity="0.9"/>
+                    <line x1="31" y1="32" x2="31" y2="28" stroke="#000" stroke-width="0.8"/>
+                    <circle cx="31" cy="27" r="0.5" fill="#000"/>
+                    <line x1="31" y1="30" x2="29" y2="27" stroke="#000" stroke-width="0.5"/>
+                    <line x1="31" y1="30" x2="33" y2="27" stroke="#000" stroke-width="0.5"/>
+                  </g>
+                  <!-- Little Bee -->
+                  <g id="acc-bee" class="plant-accessory hidden">
+                    <ellipse cx="68" cy="28" rx="2" ry="3.5" fill="#e2e8f0" opacity="0.7" transform="rotate(-15, 68, 28)"/>
+                    <ellipse cx="71" cy="29" rx="1.8" ry="3.2" fill="#e2e8f0" opacity="0.7" transform="rotate(15, 71, 29)"/>
+                    <ellipse cx="70" cy="32" rx="4.5" ry="3.2" fill="#eab308" stroke="#854d0e" stroke-width="0.5"/>
+                    <path d="M68,30 Q68.5,32 68,34" stroke="#000" stroke-width="0.8" fill="none"/>
+                    <path d="M70,29.5 Q70.5,32 70,34.5" stroke="#000" stroke-width="0.8" fill="none"/>
+                    <path d="M72,30 Q72.5,32 72,34" stroke="#000" stroke-width="0.8" fill="none"/>
+                    <polygon points="74,32 75.5,32.5 74,33" fill="#000"/>
+                    <circle cx="67.5" cy="31.5" r="0.5" fill="#000"/>
+                  </g>
+                  <!-- Cute Cat Ears -->
+                  <g id="acc-cat-ears" class="plant-accessory hidden">
+                    <polygon points="38,24 43,15 48,22" fill="#1e293b" stroke="#0f172a" stroke-width="0.8"/>
+                    <polygon points="40,23 43,17 46,21.5" fill="#fda4af"/>
+                    <polygon points="62,24 57,15 52,22" fill="#1e293b" stroke="#0f172a" stroke-width="0.8"/>
+                    <polygon points="60,23 57,17 54,21.5" fill="#fda4af"/>
+                  </g>
+                  <!-- Smart Glasses -->
+                  <g id="acc-smart-glasses" class="plant-accessory hidden">
+                    <rect x="33" y="38" width="34" height="8" rx="2" fill="rgba(0, 229, 255, 0.2)" stroke="#00e5ff" stroke-width="1.5"/>
+                    <line x1="35" y1="42" x2="65" y2="42" stroke="#fff" stroke-width="0.8" opacity="0.8"/>
+                    <path d="M33,40 L30,42" stroke="#00e5ff" stroke-width="1.2"/>
+                    <path d="M67,40 L70,42" stroke="#00e5ff" stroke-width="1.2"/>
+                  </g>
+                  <!-- Hibiscus Flower -->
+                  <g id="acc-hibiscus" class="plant-accessory hidden">
+                    <circle cx="63" cy="28" r="4.5" fill="#ec4899"/>
+                    <circle cx="59.5" cy="28" r="3.2" fill="#db2777"/>
+                    <circle cx="66.5" cy="28" r="3.2" fill="#db2777"/>
+                    <circle cx="63" cy="24.5" r="3.2" fill="#db2777"/>
+                    <circle cx="63" cy="31.5" r="3.2" fill="#db2777"/>
+                    <circle cx="63" cy="28" r="1.5" fill="#eab308"/>
+                    <path d="M63,28 L67,23" stroke="#eab308" stroke-width="1" stroke-linecap="round"/>
+                    <circle cx="67" cy="23" r="0.6" fill="#ef4444"/>
+                  </g>
+                  <!-- Witch Hat -->
+                  <g id="acc-witch-hat" class="plant-accessory hidden">
+                    <ellipse cx="50" cy="24" rx="19" ry="3.5" fill="#3b0764" stroke="#1e1b4b" stroke-width="0.8"/>
+                    <path d="M42,23 L47,10 L50,4 C51,8 55,17 58,23 Z" fill="#581c87" stroke="#1e1b4b" stroke-width="0.8"/>
+                    <path d="M42.2,22 C45,22.8 55,22.8 57.8,22 L57.9,23 Q50,24.5 42.1,23 Z" fill="#22c55e"/>
+                    <rect x="49" y="21.5" width="2" height="2" fill="#eab308" stroke="#ca8a04" stroke-width="0.5"/>
+                  </g>
+
+                  <!-- Eyebrows (Expressive paths morphed in JS) -->
+                  <path id="eyebrow-left" class="plant-eyebrow" d="M38,36 Q42,34 45,36" fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+                  <path id="eyebrow-right" class="plant-eyebrow" d="M55,36 Q58,34 62,36" fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+
+                  <!-- Eyes (Large Child-like Sparkly Eyes) -->
+                  <g id="plant-eyes" class="plant-eyes">
+                    <!-- Eye backgrounds -->
+                    <circle class="eye eye-left" cx="42" cy="42" r="5.8" fill="#1e293b"/>
+                    <circle class="eye eye-right" cx="58" cy="42" r="5.8" fill="#1e293b"/>
+                    
+                    <!-- Irises -->
+                    <circle class="iris iris-left" cx="42" cy="42" r="4.2" fill="#0f172a"/>
+                    <circle class="iris iris-right" cx="58" cy="42" r="4.2" fill="#0f172a"/>
+
+                    <!-- Primary sparkles (Pupil highlight trackers) -->
+                    <circle class="pupil pupil-left" cx="40.5" cy="40.5" r="1.8" fill="#fff"/>
+                    <circle class="pupil pupil-right" cx="56.5" cy="40.5" r="1.8" fill="#fff"/>
+
+                    <!-- Secondary baby reflections (static 3D parallax glint) -->
+                    <circle class="eye-shine" cx="44.2" cy="44.2" r="0.9" fill="#fff" opacity="0.8"/>
+                    <circle class="eye-shine" cx="60.2" cy="44.2" r="0.9" fill="#fff" opacity="0.8"/>
+                  </g>
+
+                  <!-- Closed Eyelids (Only shown in sleep mode) -->
+                  <g id="closed-eyelids" style="display: none;">
+                    <path d="M37,42 Q42,46 47,42" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M53,42 Q58,46 63,42" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+                  </g>
+
+                  <!-- Blush marks -->
+                  <ellipse class="blush blush-left" cx="35.5" cy="47" rx="3.2" ry="1.6" fill="#fb7185" opacity="0.3"/>
+                  <ellipse class="blush blush-right" cx="64.5" cy="47" rx="3.2" ry="1.6" fill="#fb7185" opacity="0.3"/>
+
+                  <!-- Mouth -->
+                  <path id="plant-mouth" class="plant-mouth" d="M45,51 Q50,56 55,51" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+        </div>
+        <!-- Speech bubble -->
+        <div id="plant-speech" class="speech-bubble glass-speech" aria-live="polite">
+          <span id="speech-text">Hello! Let's save the planet! 🌍</span>
+        </div>
+        <!-- Sunflower Interaction Controls -->
+        <div class="plant-controls" style="display: flex; gap: 8px; justify-content: center; width: 100%; margin-top: 2px; margin-bottom: 6px; z-index: 10;">
+          <button id="water-btn" class="plant-ctrl-btn" title="Water Sunflower (30 Coins -> Offset -0.5kg CO₂)" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-radius: var(--r-sm); border: 1px solid rgba(0,229,255,0.2); background: rgba(0,229,255,0.06); color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; transition: all 0.2s;">💧 Water</button>
+          <button id="shop-btn" class="plant-ctrl-btn" title="Sunflower Boutique" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-radius: var(--r-sm); border: 1px solid rgba(251,191,36,0.2); background: rgba(251,191,36,0.06); color: #fbbf24; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; transition: all 0.2s;">🛍️ Shop</button>
+          <button id="trivia-btn" class="plant-ctrl-btn" title="Daily Eco-Trivia Quiz" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-radius: var(--r-sm); border: 1px solid rgba(0,240,160,0.2); background: rgba(0,240,160,0.06); color: #00f0a0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; transition: all 0.2s;">❓ Trivia</button>
+        </div>
+        <div class="ring-text">
+          <span id="ring-val" class="ring-val">5.0</span>
+          <span class="ring-unit">kg CO₂ left</span>
+        </div>
+      </div>
+
+      <!-- Live Streak / Coins Stats -->
+      <div class="sidebar-stats">
+        <div class="sidebar-stat glass-stat" title="Daily Streak">
+          <span class="stat-icon">🔥</span>
+          <div class="stat-meta">
+            <span class="stat-lbl">Streak</span>
+            <span id="s-streak" class="stat-val">0 days</span>
+          </div>
+        </div>
+        <div class="sidebar-stat glass-stat" title="Green Coins Balance">
+          <span class="stat-icon">🪙</span>
+          <div class="stat-meta">
+            <span class="stat-lbl">Green Coins</span>
+            <span id="s-coins" class="stat-val">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="sidebar-tabs" aria-label="App modules navigation">
+        <button class="tab-btn active" data-tab="p-wallet" role="tab"><span class="ti">💳</span> Ledger Overview</button>
+        <button class="tab-btn" data-tab="p-activities" role="tab"><span class="ti">🚴</span> Eco Activities</button>
+        <button class="tab-btn" data-tab="p-digital" role="tab"><span class="ti">💻</span> Digital Tracker</button>
+        <button class="tab-btn" data-tab="p-grid" role="tab"><span class="ti">⚡</span> GreenGrid Scheduler</button>
+        <button class="tab-btn" data-tab="p-quests" role="tab"><span class="ti">🏆</span> Quests & Goals</button>
+        <button class="tab-btn" data-tab="p-quizzes" role="tab"><span class="ti">🧠</span> Eco Quizzes</button>
+        <button class="tab-btn" data-tab="p-analytics" role="tab"><span class="ti">📈</span> Analytics Charts</button>
+      </nav>
+
+      <!-- Streak Protection / Footer -->
+      <div class="sidebar-footer">
+        <div class="sync-status-card glass mb" style="padding: 10px; border-radius: var(--r-md); font-size: 0.8rem; text-align: left; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="sync-dot" class="sync-dot offline" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: var(--rose); box-shadow: 0 0 8px var(--rose);"></span>
+            <span id="sync-text" class="sync-txt" style="font-weight: 500; color: var(--text-muted);">Sync: Local Storage</span>
+          </div>
+          <button id="btn-cloud-sync" class="btn btn-s btn-g" style="margin-top: 8px; width: 100%; justify-content: center; font-size: 0.72rem; padding: 6px 12px;">Sync to Cloud</button>
+        </div>
+        <button id="btn-slip" class="btn btn-wilt" title="Protects streak by admitting failure" style="width: 100%;">
+          ⚠️ I Slipped Today
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN CONTENT AREA ─── -->
+    <main class="content-pane" role="main">
+
+      <!-- ══ WALLET / LEDGER PANEL ══ -->
+      <section id="p-wallet" class="panel active" role="tabpanel">
+        <div class="page-head">
+          <h1>Carbon Ledger</h1>
+          <p>Live transaction journal summarizing carbon expenditures and offsets.</p>
+        </div>
+
+        <div class="g3 mb">
+          <div class="card glass val-card con-card">
+            <h3>Emissions Spent</h3>
+            <div id="val-emissions" class="card-large tr">+0.00 kg</div>
+            <p class="sub">Total negative activities</p>
+          </div>
+          <div class="card glass val-card rep-card">
+            <h3>Offsets Credited</h3>
+            <div id="val-offsets" class="card-large tg">−0.00 kg</div>
+            <p class="sub">Total environmental credits</p>
+          </div>
+          <div class="card glass val-card net-card">
+            <h3>Net Wallet Balance</h3>
+            <div id="val-net" class="card-large">0.00 kg</div>
+            <p id="net-desc" class="sub">Remaining: 5.0 kg</p>
+          </div>
+        </div>
+
+        <div class="card glass">
+          <div class="card-header">
+            <h3>Today's Ledger Journal</h3>
+            <button id="btn-clear-ledger" class="btn-g btn-s">Reset Journal</button>
+          </div>
+          <p class="mb">Calculated automatically as activities are logged.</p>
+          <div id="ledger" class="ledger" role="log">
+            <div class="ledger-empty">No transactions logged today. Go to 'Eco Activities' or 'Digital Tracker' to add items!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ ECO ACTIVITIES PANEL ══ -->
+      <section id="p-activities" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>Eco Activities</h1>
+          <p>Adjust your lifestyle choices. Allowance is updated instantly.</p>
+        </div>
+
+        <div class="g2 mb">
+          <!-- Consuming Activities -->
+          <div class="card glass">
+            <div class="card-title-wrap con">
+              <span class="card-title-icon">🔴</span>
+              <h2>Lifestyle Emissions (Consuming)</h2>
+            </div>
+            <p class="mb">Actions that deplete your daily carbon buffer.</p>
+            <div id="con-list" class="counter-list"></div>
+          </div>
+
+          <!-- Replenishing Activities -->
+          <div class="card glass">
+            <div class="card-title-wrap rep">
+              <span class="card-title-icon">🟢</span>
+              <h2>Lifestyle Offsets (Replenishing)</h2>
+            </div>
+            <p class="mb">Swaps and habits that restore your daily buffer.</p>
+            <div id="rep-list" class="counter-list"></div>
+          </div>
+        </div>
+
+        <!-- Google Health Sync Card -->
+        <div class="card glass mb" style="margin-top: 20px;">
+          <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.8rem;">🏥</span>
+              <div>
+                <h2 style="margin: 0; font-size: 1.1rem; color: var(--text);">Google Health Synchronization</h2>
+                <p class="sub" style="margin: 0; color: var(--text-muted); font-size: 0.78rem;">Automate active transit tracking by linking your health records.</p>
+              </div>
+            </div>
+            <button id="btn-health-sync" class="btn btn-glow btn-s">Link Google Health</button>
+          </div>
+          <div id="health-sync-details" class="health-sync-details" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
+            Status: <span style="color: var(--rose); font-weight: 600;">Not Synced</span>. Connect to automatically sync active daily walking and cycling metrics.
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ DIGITAL FOOTPRINT PANEL ══ -->
+      <section id="p-digital" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>Digital Footprint</h1>
+          <p>Hidden carbon footprints from data servers, AI computation, and network streaming.</p>
+        </div>
+
+        <div class="card glass mb">
+          <div class="digi-header">
+            <div>
+              <h2>Network Emissions Tracker</h2>
+              <p>Values translate automatically into the main wallet balance.</p>
+            </div>
+            <div id="digi-total" class="metric-total tr">+0.00 kg CO₂</div>
+          </div>
+          <div id="digi-grid" class="g3"></div>
+        </div>
+
+        <div id="digi-adv" class="adv glass-adv">
+          <span class="adv-i">💡</span>
+          <div>
+            <strong>Eco Recommendation</strong>
+            <p style="margin-top:2px;">Track your streaming hours and switch from 4K to 1080p to conserve cloud server emissions.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ GREENGRID ADVISOR PANEL ══ -->
+      <section id="p-grid" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>GreenGrid Advisor</h1>
+          <p>Sync energy-intensive appliance use with real-time green energy windows.</p>
+        </div>
+
+        <div class="card glass mb">
+          <h2>24-Hour Power Intensity Forecast</h2>
+          <p class="mb">Click an hour to see advice or schedule appliance runs.</p>
+          
+          <div id="grid-tl" class="timeline" role="listbox"></div>
+
+          <div class="legend">
+            <div class="leg"><span class="ldot" style="background:var(--green);"></span> Clean (Renewable Peak)</div>
+            <div class="leg"><span class="ldot" style="background:var(--amber);"></span> Moderate Mix</div>
+            <div class="leg"><span class="ldot" style="background:var(--rose);"></span> Dirty (Fossil Fuel Heavy)</div>
+          </div>
+
+          <div id="grid-advisor-card" class="adv glass-adv">
+            <span id="grid-adv-icon" class="adv-i">🟢</span>
+            <div>
+              <strong id="grid-info">12 PM — CLEAN WINDOW</strong>
+              <p id="grid-adv" style="margin-top:2px;">Grid power is clean. Ideal window for high-draw activities.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="g2">
+          <!-- Booking Form -->
+          <div class="card glass">
+            <h2>Schedule Appliance Run</h2>
+            <p class="mb">Select an hour and appliance to calculate grid impact.</p>
+            
+            <div class="fg">
+              <label for="sched-hour" class="fl">Scheduled Hour:</label>
+              <select id="sched-hour" class="fs glass-input"></select>
+            </div>
+            <div class="fg">
+              <label for="sched-appliance" class="fl">Select Appliance:</label>
+              <select id="sched-appliance" class="fs glass-input">
+                <option value="dryer" data-kw="1.50">Tumble Dryer (1.5 kW)</option>
+                <option value="hot_wash" data-kw="0.95">Hot Wash Washer (0.95 kW)</option>
+                <option value="cold_wash" data-kw="0.45">Cold Wash Washer (0.45 kW)</option>
+                <option value="ev" data-kw="3.30">EV Level 1 Charger (3.3 kW)</option>
+                <option value="dishwasher" data-kw="1.20">Dishwasher (1.2 kW)</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label for="sched-hours" class="fl">Run Duration (hours):</label>
+              <input type="number" id="sched-hours" class="fi glass-input" value="1" min="0.5" max="6" step="0.5">
+            </div>
+            <button id="btn-schedule-add" class="btn btn-glow mt">Book Scheduled Load</button>
+          </div>
+
+          <!-- Booked Tasks -->
+          <div class="card glass">
+            <h2>Booked Grid Tasks</h2>
+            <p class="mb">Active scheduled loads influencing your carbon wallet.</p>
+            <div id="grid-tasks" class="grid-task-list">
+              <div class="empty-state">No grid tasks scheduled for today.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ QUESTS PANEL ══ -->
+      <section id="p-quests" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>Quests & Goals</h1>
+          <p>Earn extra Green Coins by completing daily quests, weekly targets, and monthly milestones.</p>
+        </div>
+
+        <div class="quest-grid">
+          <!-- Daily Quests -->
+          <div class="quest-column">
+            <div class="quest-section-header">
+              <h2>🎯 Daily Quests</h2>
+              <span class="quest-sub">Refreshes every 24h</span>
+            </div>
+            <div id="daily-quests" class="quest-stack"></div>
+          </div>
+
+          <!-- Weekly Goals -->
+          <div class="quest-column">
+            <div class="quest-section-header">
+              <h2>📅 Weekly Goals</h2>
+              <span class="quest-sub">Resets on Mondays</span>
+            </div>
+            <div id="weekly-goals" class="quest-stack"></div>
+          </div>
+
+          <!-- Monthly Milestones -->
+          <div class="quest-column">
+            <div class="quest-section-header">
+              <h2>🗓️ Monthly Milestones</h2>
+              <span class="quest-sub">Resets monthly</span>
+            </div>
+            <div id="monthly-goals" class="quest-stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ ECO QUIZZES PANEL ══ -->
+      <section id="p-quizzes" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>Eco Quizzes</h1>
+          <p>Test your environmental knowledge and earn Green Coins by completing quizzes!</p>
+        </div>
+
+        <!-- 1. Selection Screen -->
+        <div id="quiz-selection-screen" class="quiz-container">
+          <div class="card glass mb" style="padding: 24px; text-align: center;">
+            <span style="font-size: 3rem; display: block; margin-bottom: 12px;">🧠</span>
+            <h2>Choose Your Challenge</h2>
+            <p style="color: var(--text-muted); max-width: 500px; margin: 8px auto 20px;">
+              Choose between Easy, Medium, or Hard. Each quiz has 10 questions. Get a perfect score (10/10) to claim the coins! You can play one quiz per day.
+            </p>
+
+            <div class="quiz-levels-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 10px;">
+              <!-- Easy Level -->
+              <div class="quiz-level-card glass-panel" style="padding: 20px; border-radius: var(--r-md); border: 1px solid rgba(16,185,129,0.2); background: rgba(16,185,129,0.02); display: flex; flex-direction: column; align-items: center; gap: 12px; transition: all 0.3s;">
+                <span style="font-size: 2rem;">🌱</span>
+                <h3 style="color: var(--green); margin: 0;">Easy Quiz</h3>
+                <span class="badge" style="background: rgba(16,185,129,0.1); color: var(--green);">10 Questions</span>
+                <div style="font-size: 1.1rem; font-weight: 700; margin: 8px 0; color: #fff;">🪙 20 Coins</div>
+                <button class="btn btn-sm btn-glow start-quiz-btn" data-level="easy" style="width: 100%; justify-content: center; background: var(--green); color: #000;">Start Quiz</button>
+              </div>
+
+              <!-- Medium Level -->
+              <div class="quiz-level-card glass-panel" style="padding: 20px; border-radius: var(--r-md); border: 1px solid rgba(251,191,36,0.2); background: rgba(251,191,36,0.02); display: flex; flex-direction: column; align-items: center; gap: 12px; transition: all 0.3s;">
+                <span style="font-size: 2rem;">🌻</span>
+                <h3 style="color: var(--yellow); margin: 0;">Medium Quiz</h3>
+                <span class="badge" style="background: rgba(251,191,36,0.1); color: var(--yellow);">10 Questions</span>
+                <div style="font-size: 1.1rem; font-weight: 700; margin: 8px 0; color: #fff;">🪙 50 Coins</div>
+                <button class="btn btn-sm btn-glow start-quiz-btn" data-level="medium" style="width: 100%; justify-content: center; background: var(--yellow); color: #000;">Start Quiz</button>
+              </div>
+
+              <!-- Hard Level -->
+              <div class="quiz-level-card glass-panel" style="padding: 20px; border-radius: var(--r-md); border: 1px solid rgba(244,63,94,0.2); background: rgba(244,63,94,0.02); display: flex; flex-direction: column; align-items: center; gap: 12px; transition: all 0.3s;">
+                <span style="font-size: 2rem;">🌲</span>
+                <h3 style="color: var(--rose); margin: 0;">Hard Quiz</h3>
+                <span class="badge" style="background: rgba(244,63,94,0.1); color: var(--rose);">10 Questions</span>
+                <div style="font-size: 1.1rem; font-weight: 700; margin: 8px 0; color: #fff;">🪙 85 Coins</div>
+                <button class="btn btn-sm btn-glow start-quiz-btn" data-level="hard" style="width: 100%; justify-content: center; background: var(--rose); color: #000;">Start Quiz</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Play Screen -->
+        <div id="quiz-play-screen" class="quiz-container hidden">
+          <div class="card glass mb" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <span id="quiz-level-indicator" class="badge" style="font-size: 0.75rem; text-transform: uppercase;">Easy</span>
+              <span id="quiz-progress-text" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Question 1 of 10</span>
+            </div>
+
+            <!-- Custom Progress Bar -->
+            <div class="prog-wrap" style="height: 6px; margin-bottom: 24px; background: rgba(255,255,255,0.05); border-radius: var(--r-sm); overflow: hidden;">
+              <div id="quiz-progress-bar" class="prog-fill" style="width: 10%; height: 100%; background: var(--green); transition: width 0.3s ease;"></div>
+            </div>
+
+            <div id="quiz-question-card" style="margin-bottom: 24px;">
+              <h2 id="quiz-question-text" style="font-size: 1.25rem; font-weight: 700; line-height: 1.4; margin-bottom: 20px;">What is the most eco-friendly way to dry your clothes?</h2>
+              
+              <div id="quiz-options-container" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Dynamically populated buttons -->
+              </div>
+            </div>
+
+            <!-- Answer Feedback overlay -->
+            <div id="quiz-feedback-box" class="hidden" style="margin-top: 20px; padding: 16px; border-radius: var(--r-md); background: rgba(255,255,255,0.02); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+              <div id="quiz-feedback-title" style="font-weight: 700; font-size: 1rem;">Correct!</div>
+              <div id="quiz-feedback-desc" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">Great job!</div>
+              <button id="quiz-next-question-btn" class="btn btn-sm btn-glow" style="align-self: flex-end;">Next Question ➡️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Results Screen -->
+        <div id="quiz-results-screen" class="quiz-container hidden">
+          <div class="card glass mb" style="padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+            <span id="quiz-result-emoji" style="font-size: 4rem;">🏆</span>
+            <h2 id="quiz-result-title">Perfect Score!</h2>
+            <div style="font-size: 1.1rem; color: var(--text-muted);">
+              You answered <strong id="quiz-result-score" style="color: #fff; font-size: 1.4rem;">10 / 10</strong> questions correctly.
+            </div>
+            <div id="quiz-result-payout" style="font-size: 1.25rem; font-weight: 700; color: var(--green); background: rgba(0,240,160,0.06); padding: 12px 24px; border-radius: var(--r-md); border: 1px solid rgba(0,240,160,0.2);">
+              🪙 +20 Green Coins Earned!
+            </div>
+            <p id="quiz-result-desc" style="max-width: 450px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin: 4px 0;">
+              Awesome environmental knowledge! Keep it up and save the planet.
+            </p>
+            <button id="quiz-back-btn" class="btn btn-md btn-glow" style="margin-top: 10px;">Back to Quizzes</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ ANALYTICS PANEL ══ -->
+      <section id="p-analytics" class="panel" role="tabpanel">
+        <div class="page-head">
+          <h1>Carbon Analytics</h1>
+          <p>Analyze your carbon footprint history, trend lines, and targets visually.</p>
+        </div>
+
+        <div class="g2 mb">
+          <div class="card glass" style="grid-column: span 2;">
+            <div class="card-header">
+              <h2>7-Day Emissions Trend</h2>
+              <span class="sub" style="color: var(--text-muted);">Spent vs. Target Budget (kg CO₂)</span>
+            </div>
+            <div class="chart-container" style="position: relative; height: 260px; width: 100%; margin-top: 15px;">
+              <canvas id="emissions-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="g3">
+          <div class="card glass val-card">
+            <h3>Average Spent</h3>
+            <div id="analytics-avg-spent" class="card-large">0.00 kg</div>
+            <p class="sub">Daily average emissions</p>
+          </div>
+          <div class="card glass val-card">
+            <h3>Best Day</h3>
+            <div id="analytics-best-day" class="card-large tg">0.00 kg</div>
+            <p class="sub">Lowest daily emissions</p>
+          </div>
+          <div class="card glass val-card">
+            <h3>Budget Compliance</h3>
+            <div id="analytics-compliance" class="card-large ta">0%</div>
+            <p class="sub">Days kept within budget</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ─── PHOTO PROOF UPLOAD MODAL OVERLAY ─── -->
+  <div id="upload-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal-card glass-deep" style="max-width: 440px;">
+      <button id="btn-upload-close" class="modal-close-btn" aria-label="Close Upload" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+      <h2 id="upload-modal-title" style="margin-top: 0; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-display);">
+        📷 Photo Proof Verification
+      </h2>
+      
+      <!-- Verification Tab Selectors -->
+      <div class="tab-selectors" style="display: flex; gap: 8px; margin-bottom: 15px; justify-content: center;">
+        <button id="tab-upload-file" class="btn btn-xs active" style="flex: 1; justify-content: center; padding: 6px 12px; border-radius: var(--r-md); transition: all 0.2s;">📁 Upload File</button>
+        <button id="tab-take-photo" class="btn btn-xs" style="flex: 1; justify-content: center; padding: 6px 12px; border-radius: var(--r-md); background: rgba(255,255,255,0.02); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.06); transition: all 0.2s;">📸 Use Camera</button>
+      </div>
+
+      <!-- File Upload Zone -->
+      <div id="file-upload-zone">
+        <div id="drop-zone" style="border: 2px dashed rgba(255, 255, 255, 0.15); border-radius: var(--r-md); padding: 30px 20px; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+          <span style="font-size: 2.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));">📁</span>
+          <span style="font-weight: 500; font-size: 0.85rem; color: var(--text);">Drag & Drop photo or Click to browse</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Supports PNG, JPG, GIF</span>
+        </div>
+      </div>
+      <input type="file" id="quest-file-input" accept="image/*" style="position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px;">
+
+      <!-- Camera Capture Zone -->
+      <div id="camera-capture-zone" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div style="width: 100%; height: 180px; border-radius: var(--r-md); overflow: hidden; background: #000; border: 1px solid var(--border); position: relative; display: flex; align-items: center; justify-content: center;">
+          <video id="camera-stream" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+          <span id="camera-loading" style="position: absolute; color: var(--text-muted); font-size: 0.8rem;">Initializing Camera...</span>
+        </div>
+        <button id="btn-capture-photo" class="btn btn-sm btn-glow" style="width: 100%; justify-content: center;">📸 Capture Frame</button>
+      </div>
+
+      <!-- Preview container -->
+      <div id="upload-preview-container" class="hidden" style="margin-top: 15px; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); background: rgba(0,0,0,0.2); height: 180px; display: flex; align-items: center; justify-content: center; position: relative;">
+        <img id="upload-preview-img" src="" alt="Selected Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        <button id="btn-remove-selected-photo" style="position: absolute; top: 10px; right: 10px; background: rgba(244, 63, 94, 0.85); border: none; color: #fff; cursor: pointer; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">&times;</button>
+      </div>
+
+      <button id="btn-submit-proof" class="btn btn-glow mt" style="width: 100%; justify-content: center;" disabled>Submit Proof & Claim</button>
+    </div>
+  </div>
+
+  <!-- ─── PHOTO PROOF VIEW MODAL OVERLAY ─── -->
+  <div id="photo-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="photo-modal-title">
+    <div class="modal-card glass-deep" style="max-width: 440px;">
+      <button id="btn-photo-close" class="modal-close-btn" aria-label="Close Preview" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+      <h2 id="photo-modal-title" style="margin-top: 0; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-display);">
+        📷 Photo Proof
+      </h2>
+      <div style="margin: 15px 0; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); background: rgba(0,0,0,0.2); height: 260px; display: flex; align-items: center; justify-content: center;">
+        <img id="photo-preview-img" src="" alt="Proof Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+      </div>
+      <p id="photo-modal-desc" class="modal-text" style="font-size: 0.82rem; color: var(--text-muted); text-align: center; margin-bottom: 0;">
+        Uploaded proof for quest.
+      </p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- App Scripts -->
+  <script src="app.js"></script>
+  <script src="tests.js"></script>
+</body>
+</html>

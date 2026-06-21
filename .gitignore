@@ -1,0 +1,9 @@
+# Local state & development profiles
+edge-profile/
+*.log
+edge_debug.log
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
